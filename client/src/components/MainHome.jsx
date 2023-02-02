@@ -1,18 +1,17 @@
-import axios from 'axios';
-import React from 'react';
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { Button, Col, Container, Form, Row } from 'react-bootstrap';
-import { useSelector } from 'react-redux';
-import TimeAgo from './TimeAgo';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
+import { useSelector } from "react-redux";
+import TimeAgo from "./TimeAgo";
 
 const MainHome = () => {
   const { user } = useSelector((state) => state.auth);
 
   const [conversations, setConversations] = useState([]);
-  const [lastConvoClicked, setLastConvoClicked] = useState('');
-  const [messages, setMessages] = useState('');
-  const [message, setMessage] = useState('');
+  const [lastConvoClicked, setLastConvoClicked] = useState({});
+  const [otherUser, setOtherUser] = useState({});
+  const [messages, setMessages] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,13 +44,13 @@ const MainHome = () => {
       }
     );
     setMessages((prev) => [...prev, res.data]);
-    setMessage('');
+    setMessage("");
   };
 
   useEffect(() => {
     const fetchData = async () => {
       const res = await axios.get(
-        `http://localhost:5000/api/v1/message/${lastConvoClicked}`,
+        `http://localhost:5000/api/v1/message/${lastConvoClicked._id}`,
         {
           headers: {
             Authorization: `Bearer ${user.token}`,
@@ -60,24 +59,46 @@ const MainHome = () => {
       );
       setMessages(res.data);
     };
-    fetchData();
+
+    lastConvoClicked && fetchData();
   }, [lastConvoClicked]);
+
+  useEffect(() => {
+    const fetchOtherUser = async () => {
+      try {
+        const otherUserId = lastConvoClicked?.members?.find(
+          (member) => member !== user._id
+        );
+        const res = await axios.get(
+          `http://localhost:5000/api/v1/users/${otherUserId}`
+        );
+        setOtherUser(res.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    lastConvoClicked && fetchOtherUser();
+  }, [lastConvoClicked]);
+
+  console.log(otherUser);
+
   return (
     <div>
       <Container className="py-5">
         <Row>
-          <Col>
+          <Col lg={4}>
             {conversations.map((c) => (
               <div
                 className="mb-2 bg-warning"
-                onClick={() => setLastConvoClicked(c._id)}
+                onClick={() => setLastConvoClicked(c)}
                 key={c._id}
               >
                 <div>John</div>
               </div>
             ))}
           </Col>
-          <Col>
+
+          <Col lg={8}>
             {messages ? (
               <>
                 {messages.length > 0 ? (
@@ -94,7 +115,8 @@ const MainHome = () => {
             ) : (
               <h1>Please Select Message</h1>
             )}
-            {lastConvoClicked && (
+
+            {lastConvoClicked.members && (
               <>
                 <Form onSubmit={handleSubmit}>
                   <Form.Group controlId="formUsername">
@@ -110,7 +132,6 @@ const MainHome = () => {
               </>
             )}
           </Col>
-          <Col>3</Col>
         </Row>
       </Container>
     </div>

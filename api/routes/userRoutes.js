@@ -1,8 +1,9 @@
-const { allUsers } = require('../controller/user');
+const { allUsers, findUserById } = require("../controller/user");
 
-const router = require('express').Router();
+const router = require("express").Router();
 
 // Users Routes
-router.get('/', allUsers);
+router.get("/", allUsers);
+router.get("/:id", findUserById);
 
 module.exports = router;
